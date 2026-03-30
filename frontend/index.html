@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <meta name="theme-color" content="#0C447C">
+  <meta name="description" content="TurnosYa — Reserva turnos en peluquerías, nail art, nutricionistas y más">
+  <title>TurnosYa — Reserva tu turno</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell" id="app">
+
+  <!-- ── PANTALLA: INICIO ── -->
+  <div id="screen-home">
+    <div class="hero">
+      <div class="hero-greeting">Hola 👋 ¿Qué necesitas hoy?</div>
+      <div class="hero-title">Reserva tu turno<br>sin llamadas ni esperas</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-val">+120</div>
+          <div class="hero-stat-lbl">Negocios</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">24/7</div>
+          <div class="hero-stat-lbl">Disponible</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">100%</div>
+          <div class="hero-stat-lbl">Gratis</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section mt-16">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="buscador" placeholder="Buscar peluquería, nail art, nutricionista..." />
+      </div>
+    </div>
+
+    <div class="section mt-16">
+      <div class="chips" id="chips-categorias">
+        <div class="chip active" data-cat="">Todos</div>
+        <div class="chip" data-cat="Peluquería">Peluquería</div>
+        <div class="chip" data-cat="Nail Art">Nail Art</div>
+        <div class="chip" data-cat="Nutrición">Nutrición</div>
+        <div class="chip" data-cat="Masajes">Masajes</div>
+        <div class="chip" data-cat="Médico">Médico</div>
+      </div>
+    </div>
+
+    <div class="section mt-16 pb-80">
+      <div class="section-head">
+        <div class="section-title">Disponibles ahora</div>
+      </div>
+      <div id="lista-negocios" class="fade-up">
+        <!-- cargado por JS -->
+      </div>
+    </div>
+
+    <div class="bottom-tabs">
+      <button class="tab-btn active" onclick="showScreen('home')"><span class="tab-icon">🏠</span>Inicio</button>
+      <button class="tab-btn" onclick="showScreen('explorar')"><span class="tab-icon">🔍</span>Explorar</button>
+      <button class="tab-btn" onclick="showScreen('mis-turnos')"><span class="tab-icon">📋</span>Mis turnos</button>
+      <button class="tab-btn" onclick="showScreen('perfil')"><span class="tab-icon">👤</span>Perfil</button>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: DETALLE NEGOCIO + RESERVA ── -->
+  <div id="screen-negocio" style="display:none">
+    <div class="topbar">
+      <button class="topbar-back" onclick="showScreen('home')">←</button>
+      <div class="topbar-title" id="negocio-topbar-title">Negocio</div>
+      <div style="width:36px"></div>
+    </div>
+    <div id="negocio-detalle" class="pb-80"></div>
+    <div style="padding:0 20px 80px">
+      <div class="section-title mb-20 mt-20">Selecciona fecha</div>
+      <div class="card card-pad">
+        <div class="cal-header">
+          <button class="cal-nav" id="cal-prev">‹</button>
+          <div class="cal-month" id="cal-month-label">Abril 2025</div>
+          <button class="cal-nav" id="cal-next">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="section-title mt-20 mb-20" id="times-label" style="display:none">Horarios disponibles</div>
+      <div class="times-grid" id="times-grid"></div>
+      <div id="servicio-select-wrap" class="mt-16" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Servicio</label>
+          <select class="form-select" id="servicio-select"></select>
+        </div>
+      </div>
+      <div id="cliente-form-wrap" class="mt-16" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Tu nombre</label>
+          <input class="form-input" id="cliente-nombre" placeholder="María González" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email (para confirmar)</label>
+          <input class="form-input" id="cliente-email" type="email" placeholder="maria@email.cl" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono (opcional)</label>
+          <input class="form-input" id="cliente-tel" type="tel" placeholder="+56 9..." />
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full mt-16" id="btn-reservar" disabled>Confirmar reserva</button>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: ÉXITO RESERVA ── -->
+  <div id="screen-success" style="display:none">
+    <div class="topbar">
+      <div class="topbar-logo">Turn<span>os</span>Ya</div>
+    </div>
+    <div style="padding:40px 20px" class="fade-up">
+      <div class="success-circle">✓</div>
+      <div class="text-center mt-8">
+        <div class="section-title" style="font-size:22px">¡Turno reservado!</div>
+        <p class="text-muted mt-8">Te enviamos una confirmación a tu correo. Puedes cancelar hasta 2 horas antes.</p>
+      </div>
+      <div class="confirm-detail mt-20" id="success-detail"></div>
+      <button class="btn btn-primary btn-full mt-20" onclick="showScreen('home')">Volver al inicio</button>
+      <button class="btn btn-ghost btn-full mt-8" id="btn-cancel-from-success">Cancelar este turno</button>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: MIS TURNOS ── -->
+  <div id="screen-mis-turnos" style="display:none">
+    <div class="topbar">
+      <button class="topbar-back" onclick="showScreen('home')">←</button>
+      <div class="topbar-title">Mis turnos</div>
+      <div style="width:36px"></div>
+    </div>
+    <div style="padding:20px" class="pb-80">
+      <div id="mis-turnos-lista">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Sin turnos registrados</div>
+          <p class="empty-sub">Tus reservas aparecerán aquí una vez que las hayas confirmado</p>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tabs">
+      <button class="tab-btn" onclick="showScreen('home')"><span class="tab-icon">🏠</span>Inicio</button>
+      <button class="tab-btn" onclick="showScreen('explorar')"><span class="tab-icon">🔍</span>Explorar</button>
+      <button class="tab-btn active"><span class="tab-icon">📋</span>Mis turnos</button>
+      <button class="tab-btn" onclick="showScreen('perfil')"><span class="tab-icon">👤</span>Perfil</button>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: PERFIL ── -->
+  <div id="screen-perfil" style="display:none">
+    <div class="topbar">
+      <button class="topbar-back" onclick="showScreen('home')">←</button>
+      <div class="topbar-title">Mi perfil</div>
+      <div style="width:36px"></div>
+    </div>
+    <div style="padding:20px" class="pb-80">
+      <div class="card card-pad text-center">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--blue-50);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px">👤</div>
+        <div class="section-title">Tu cuenta</div>
+        <p class="text-muted mt-8">Tus datos se guardan localmente en este dispositivo</p>
+      </div>
+      <div class="card card-pad mt-16">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input class="form-input" id="perfil-nombre" placeholder="Tu nombre" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="perfil-email" type="email" placeholder="tu@email.cl" />
+        </div>
+        <button class="btn btn-primary btn-full" onclick="guardarPerfil()">Guardar</button>
+      </div>
+      <div class="card mt-16">
+        <button class="btn btn-ghost btn-full" onclick="window.location.href='login-negocio.html'" style="padding:16px;border-top:none">
+          🏪 ¿Tienes un negocio? Ingresa aquí →
+        </button>
+      </div>
+    </div>
+    <div class="bottom-tabs">
+      <button class="tab-btn" onclick="showScreen('home')"><span class="tab-icon">🏠</span>Inicio</button>
+      <button class="tab-btn" onclick="showScreen('explorar')"><span class="tab-icon">🔍</span>Explorar</button>
+      <button class="tab-btn" onclick="showScreen('mis-turnos')"><span class="tab-icon">📋</span>Mis turnos</button>
+      <button class="tab-btn active"><span class="tab-icon">👤</span>Perfil</button>
+    </div>
+  </div>
+
+</div><!-- /app-shell -->
+
+<script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+<script>
+/* ── Estado global ── */
+let negocioActivo = null;
+let servicios     = [];
+let selDia  = null;
+let selHora = null;
+let selTurnoId = null;
+let selTurnoEmail = null;
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+/* ── Navegación ── */
+function showScreen(name) {
+  document.querySelectorAll('[id^="screen-"]').forEach(s => s.style.display = 'none');
+  document.getElementById('screen-' + name).style.display = 'block';
+  if (name === 'mis-turnos') cargarMisTurnos();
+  if (name === 'perfil') cargarPerfil();
+}
+
+/* ── Cargar negocios ── */
+async function cargarNegocios(cat = '') {
+  const el = document.getElementById('lista-negocios');
+  el.innerHTML = spinnerHTML();
+  try {
+    const negocios = await api.getNegocios(cat);
+    if (!negocios.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Sin resultados</div><p class="empty-sub">No hay negocios en esta categoría aún</p></div>`;
+      return;
+    }
+    const iconos  = { 'Peluquería':'💇‍♀️', 'Nail Art':'💅', 'Nutrición':'🥗', 'Masajes':'💆', 'Médico':'🩺' };
+    const colores = { 'Peluquería':'#E1F5EE', 'Nail Art':'#FBEAF0', 'Nutrición':'#EAF3DE', 'Masajes':'#E6F1FB', 'Médico':'#E6F1FB' };
+    el.innerHTML = negocios.map((n, i) => `
+      <div class="card card-hover biz-card fade-up fade-up-${Math.min(i+1,4)}" onclick="abrirNegocio(${n.id})" style="margin-bottom:12px">
+        <div class="biz-icon" style="background:${colores[n.categoria]||'#E6F1FB'}">${iconos[n.categoria]||'🏪'}</div>
+        <div class="biz-info">
+          <div class="biz-name">${n.nombre}</div>
+          <div class="biz-type">${n.categoria}</div>
+          <div class="biz-meta">
+            <span class="badge badge-teal">Abierto</span>
+            <span class="stars">★ 4.9</span>
+            <span class="badge badge-gray">${n.direccion || 'Concepción'}</span>
+          </div>
+          <div class="biz-avail">Próximo disponible hoy</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Sin conexión</div><p class="empty-sub">${e.message}</p></div>`;
+  }
+}
+
+/* ── Abrir negocio ── */
+async function abrirNegocio(id) {
+  showScreen('negocio');
+  try {
+    negocioActivo = await api.getNegocio(id);
+    document.getElementById('negocio-topbar-title').textContent = negocioActivo.nombre;
+    const iconos = { 'Peluquería':'💇‍♀️', 'Nail Art':'💅', 'Nutrición':'🥗', 'Masajes':'💆', 'Médico':'🩺' };
+    document.getElementById('negocio-detalle').innerHTML = `
+      <div style="background:var(--brand-dark);padding:24px 20px;color:#fff">
+        <div style="font-size:36px;margin-bottom:8px">${iconos[negocioActivo.categoria]||'🏪'}</div>
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:700">${negocioActivo.nombre}</div>
+        <div style="font-size:14px;opacity:.75;margin-top:4px">${negocioActivo.categoria} · ${negocioActivo.direccion||'Concepción'}</div>
+        ${negocioActivo.descripcion ? `<p style="font-size:13px;opacity:.7;margin-top:10px;line-height:1.5">${negocioActivo.descripcion}</p>` : ''}
+      </div>`;
+    servicios = JSON.parse(negocioActivo.servicios || '[]').filter(s => s.id);
+    const sel = document.getElementById('servicio-select');
+    sel.innerHTML = servicios.map(s => `<option value="${s.id}">${s.nombre}${s.precio ? ' — $'+Number(s.precio).toLocaleString('es-CL') : ''}</option>`).join('');
+    buildCalendar();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+/* ── Calendario ── */
+function buildCalendar() {
+  const dias = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  const grid  = document.getElementById('cal-grid');
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent = `${meses[calMonth]} ${calYear}`;
+
+  const hoy       = new Date();
+  const primerDia = new Date(calYear, calMonth, 1).getDay();
+  const offset    = primerDia === 0 ? 6 : primerDia - 1;
+  const diasMes   = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let html = dias.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+  for (let i = 0; i < offset; i++) html += `<div class="cal-day disabled"></div>`;
+  for (let d = 1; d <= diasMes; d++) {
+    const fecha  = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const pasado = new Date(fecha + 'T12:00:00') < new Date(hoy.toDateString());
+    const esHoy  = fecha === hoy.toISOString().split('T')[0];
+    const sel    = fecha === selDia;
+    let cls = 'cal-day';
+    if (pasado) cls += ' disabled';
+    else if (sel) cls += ' selected';
+    else if (esHoy) cls += ' today avail';
+    else cls += ' avail';
+    html += `<button class="${cls}" ${pasado ? 'disabled' : `onclick="seleccionarDia('${fecha}',this)"`}>${d}</button>`;
+  }
+  grid.innerHTML = html;
+  document.getElementById('cal-prev').onclick = () => { if (calMonth === 0) { calMonth=11; calYear--; } else calMonth--; buildCalendar(); };
+  document.getElementById('cal-next').onclick = () => { if (calMonth === 11) { calMonth=0; calYear++; } else calMonth++; buildCalendar(); };
+}
+
+async function seleccionarDia(fecha, el) {
+  selDia = fecha; selHora = null;
+  document.querySelectorAll('.cal-day').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const timesEl = document.getElementById('times-grid');
+  const lbl     = document.getElementById('times-label');
+  timesEl.innerHTML = spinnerHTML();
+  lbl.style.display = 'block';
+  try {
+    const { disponibles } = await api.getDisponibles(negocioActivo.id, fecha);
+    if (!disponibles.length) {
+      timesEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--txt3);font-size:14px">Sin horarios este día</div>`;
+      return;
+    }
+    timesEl.innerHTML = disponibles.map(s =>
+      `<button class="time-btn ${!s.disponible ? 'busy' : ''}" ${!s.disponible ? 'disabled' : `onclick="seleccionarHora('${s.hora}',this)"`}>${s.hora}</button>`
+    ).join('');
+  } catch(e) {
+    timesEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--danger)">Error al cargar horarios</div>`;
+  }
+  updateBtnReservar();
+}
+
+function seleccionarHora(hora, el) {
+  selHora = hora;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('servicio-select-wrap').style.display = 'block';
+  document.getElementById('cliente-form-wrap').style.display    = 'block';
+  updateBtnReservar();
+}
+
+function updateBtnReservar() {
+  document.getElementById('btn-reservar').disabled = !(selDia && selHora);
+}
+
+/* ── Reservar turno ── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-reservar')?.addEventListener('click', async () => {
+    const nombre = document.getElementById('cliente-nombre').value.trim();
+    const email  = document.getElementById('cliente-email').value.trim();
+    const tel    = document.getElementById('cliente-tel').value.trim();
+    const servId = document.getElementById('servicio-select').value;
+
+    if (!nombre || !email) { toast('Nombre y email son obligatorios', 'error'); return; }
+    if (!email.includes('@')) { toast('Email inválido', 'error'); return; }
+
+    const btn = document.getElementById('btn-reservar');
+    setLoading(btn, true);
+    try {
+      const res = await api.crearTurno({
+        negocioId: negocioActivo.id, servicioId: servId,
+        nombre, email, telefono: tel, fecha: selDia, hora: selHora,
+      });
+      selTurnoId    = res.turnoId;
+      selTurnoEmail = email;
+      // Guardar en localStorage para "mis turnos"
+      const misTurnos = JSON.parse(localStorage.getItem('ty_turnos') || '[]');
+      misTurnos.push({ id: selTurnoId, negocio: negocioActivo.nombre, fecha: selDia, hora: selHora, email, estado: 'pendiente' });
+      localStorage.setItem('ty_turnos', JSON.stringify(misTurnos));
+      mostrarSuccess(nombre, email);
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  /* Chips filtro */
+  document.getElementById('chips-categorias')?.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    cargarNegocios(chip.dataset.cat);
+  });
+
+  /* Buscador */
+  document.getElementById('buscador')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.biz-card').forEach(card => {
+      const txt = card.textContent.toLowerCase();
+      card.style.display = txt.includes(q) ? '' : 'none';
+    });
+  });
+
+  cargarNegocios();
+  cargarPerfil();
+});
+
+function mostrarSuccess(nombre, email) {
+  const serv = servicios.find(s => s.id == document.getElementById('servicio-select').value);
+  document.getElementById('success-detail').innerHTML = `
+    <div class="confirm-row"><span>Negocio</span><span>${negocioActivo.nombre}</span></div>
+    <div class="confirm-row"><span>Servicio</span><span>${serv?.nombre || '—'}</span></div>
+    <div class="confirm-row"><span>Fecha</span><span>${fechaUtil.diaSemana(selDia)} ${fechaUtil.formato(selDia)}</span></div>
+    <div class="confirm-row"><span>Hora</span><span>${selHora}</span></div>
+    <div class="confirm-row"><span>Email</span><span>${email}</span></div>
+    <div class="confirm-row"><span>Estado</span><span style="color:var(--success)">Confirmado ✓</span></div>`;
+  document.getElementById('btn-cancel-from-success').onclick = () => cancelarTurno(selTurnoId, selTurnoEmail);
+  showScreen('success');
+}
+
+/* ── Mis turnos ── */
+function cargarMisTurnos() {
+  const turnos = JSON.parse(localStorage.getItem('ty_turnos') || '[]');
+  const el = document.getElementById('mis-turnos-lista');
+  if (!turnos.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin turnos</div><p class="empty-sub">Reserva tu primer turno y aparecerá aquí</p></div>`;
+    return;
+  }
+  el.innerHTML = turnos.reverse().map((t, i) => `
+    <div class="card card-pad fade-up fade-up-${i+1}" style="margin-bottom:12px">
+      <div class="flex-between">
+        <div>
+          <div class="section-title" style="font-size:15px">${t.negocio}</div>
+          <div class="text-muted mt-8">📅 ${fechaUtil.diaSemana(t.fecha)} ${fechaUtil.formato(t.fecha)} · ${t.hora}</div>
+        </div>
+        <span class="badge ${t.estado==='cancelado'?'badge-danger':t.estado==='completado'?'badge-gray':'badge-teal'}">${t.estado}</span>
+      </div>
+      ${t.estado !== 'cancelado' ? `<button class="btn btn-danger btn-full mt-16" style="font-size:13px;padding:8px" onclick="cancelarTurno(${t.id},'${t.email}')">Cancelar turno</button>` : ''}
+    </div>`).join('');
+}
+
+async function cancelarTurno(id, email) {
+  if (!confirm('¿Segura que quieres cancelar este turno?')) return;
+  try {
+    await api.cancelarTurno(id, email);
+    const turnos = JSON.parse(localStorage.getItem('ty_turnos') || '[]');
+    const idx = turnos.findIndex(t => t.id === id);
+    if (idx !== -1) { turnos[idx].estado = 'cancelado'; localStorage.setItem('ty_turnos', JSON.stringify(turnos)); }
+    toast('Turno cancelado', 'success');
+    cargarMisTurnos();
+    if (document.getElementById('screen-success').style.display !== 'none') showScreen('home');
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+/* ── Perfil ── */
+function cargarPerfil() {
+  const p = JSON.parse(localStorage.getItem('ty_perfil') || '{}');
+  const n = document.getElementById('perfil-nombre');
+  const e = document.getElementById('perfil-email');
+  if (n && p.nombre) n.value = p.nombre;
+  if (e && p.email)  e.value = p.email;
+}
+function guardarPerfil() {
+  const p = { nombre: document.getElementById('perfil-nombre').value, email: document.getElementById('perfil-email').value };
+  localStorage.setItem('ty_perfil', JSON.stringify(p));
+  toast('Perfil guardado ✓', 'success');
+}
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registrado")).catch(e=>console.error("SW error",e));}</script>
+</body>
+</html>

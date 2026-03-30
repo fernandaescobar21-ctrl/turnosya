@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#042C53">
+  <title>TurnosYa — Panel del Negocio</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body { background:var(--bg); }
+    .stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:24px; }
+    @media(max-width:900px){ .stats-grid{grid-template-columns:repeat(2,1fr)} .admin-layout{flex-direction:column} .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;gap:4px;padding:12px} .sidebar-logo{flex:1;padding:8px 12px;font-size:16px} .sidebar-nav{display:flex;flex-wrap:wrap;gap:4px;padding:0} .nav-item{padding:8px 10px;font-size:12px} .sidebar-bottom{display:none} }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .filter-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:0; }
+    .client-av { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
+    .horario-row { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--border); }
+    .horario-day { font-size:14px; font-weight:500; width:100px; }
+    .time-inputs { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--txt2); }
+    .time-inputs input { width:90px; padding:7px 10px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; }
+    .time-inputs input:focus { border-color:var(--brand); }
+    .act-btn { padding:6px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:500; cursor:pointer; border:1px solid; transition:all .15s; }
+    .act-confirm { border-color:var(--teal-400); color:var(--teal-600); background:var(--teal-50); }
+    .act-confirm:hover { background:var(--teal-400); color:#fff; }
+    .act-cancel  { border-color:var(--border); color:var(--txt3); background:none; }
+    .act-cancel:hover { border-color:var(--danger); color:var(--danger); }
+    .serv-row { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); }
+    .serv-name { flex:1; font-size:14px; font-weight:500; }
+    .serv-meta { font-size:12px; color:var(--txt3); }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-logo">Turn<span>os</span>Ya</div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+      <button class="nav-item" onclick="switchTab('turnos')"><span class="nav-icon">📋</span> Turnos <span class="nav-badge" id="badge-pendientes">0</span></button>
+      <button class="nav-item" onclick="switchTab('servicios')"><span class="nav-icon">✂️</span> Servicios</button>
+      <button class="nav-item" onclick="switchTab('horarios')"><span class="nav-icon">🕐</span> Horarios</button>
+      <button class="nav-item" onclick="switchTab('config')"><span class="nav-icon">⚙️</span> Mi negocio</button>
+      <button class="nav-item" onclick="switchTab('suscripcion')"><span class="nav-icon">💳</span> Mi plan</button>
+    </div>
+    <div class="sidebar-bottom">
+      <div id="sidebar-negocio-nombre">Mi negocio</div>
+      <div class="plan-badge">Plan Pro</div><br>
+      <button id="btn-logout" class="btn btn-ghost" style="margin-top:10px;color:rgba(255,255,255,.5);padding:4px 0;font-size:12px">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="admin-main">
+
+    <!-- Dashboard -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="page-header flex-between">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="fecha-hoy">Cargando...</div>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('turnos')">+ Nuevo turno</button>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-lbl">Turnos hoy</div><div class="stat-val" id="stat-hoy">—</div><div class="stat-delta up" id="stat-hoy-d"></div></div>
+        <div class="stat-card"><div class="stat-lbl">Esta semana</div><div class="stat-val" id="stat-sem">—</div><div class="stat-delta up">Esta semana</div></div>
+        <div class="stat-card"><div class="stat-lbl">Pendientes</div><div class="stat-val" id="stat-pend" style="color:var(--warn)">—</div><div class="stat-delta" style="color:var(--txt3)">Sin confirmar</div></div>
+        <div class="stat-card"><div class="stat-lbl">Cancelaciones</div><div class="stat-val" id="stat-canc" style="color:var(--danger)">—</div><div class="stat-delta down"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-pad flex-between" style="border-bottom:1px solid var(--border)">
+          <div class="section-title">Turnos de hoy</div>
+          <div style="display:flex;gap:8px">
+            <button class="chip active" onclick="filtrarDashboard('hoy',this)">Hoy</button>
+            <button class="chip" onclick="filtrarDashboard('manana',this)">Mañana</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Cliente</th><th>Servicio</th><th>Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tbody-dashboard"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Turnos -->
+    <div class="tab-content" id="tab-turnos">
+      <div class="page-header flex-between">
+        <div><div class="page-title">Todos los turnos</div><div class="page-sub">Gestiona y confirma reservas</div></div>
+      </div>
+      <div class="card">
+        <div class="card-pad" style="border-bottom:1px solid var(--border)">
+          <div class="filter-row">
+            <input class="form-input" id="filter-fecha" type="date" style="width:160px" />
+            <select class="form-select" id="filter-estado" style="width:160px">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="cancelado">Cancelado</option>
+              <option value="completado">Completado</option>
+            </select>
+            <button class="btn btn-outline" onclick="cargarTurnos()">Filtrar</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tbody-turnos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Servicios -->
+    <div class="tab-content" id="tab-servicios">
+      <div class="page-header flex-between">
+        <div><div class="page-title">Servicios</div><div class="page-sub">Los servicios que ofreces</div></div>
+        <button class="btn btn-primary" onclick="toggleFormServicio()">+ Agregar</button>
+      </div>
+      <div class="card" id="form-servicio-card" style="display:none;margin-bottom:20px">
+        <div class="card-pad">
+          <div class="section-title mb-20" style="margin-bottom:16px">Nuevo servicio</div>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="serv-nombre" placeholder="Corte de cabello" /></div>
+            <div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" id="serv-dur" type="number" value="30" min="15" /></div>
+            <div class="form-group"><label class="form-label">Precio ($)</label><input class="form-input" id="serv-precio" type="number" placeholder="15000" /></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="guardarServicio()">Guardar</button>
+            <button class="btn btn-outline" onclick="toggleFormServicio()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="lista-servicios"></div>
+    </div>
+
+    <!-- Horarios -->
+    <div class="tab-content" id="tab-horarios">
+      <div class="page-header flex-between">
+        <div><div class="page-title">Horarios</div><div class="page-sub">Días y horas de atención</div></div>
+        <button class="btn btn-primary" onclick="guardarHorarios()">Guardar cambios</button>
+      </div>
+      <div class="card" id="horarios-lista"></div>
+    </div>
+
+    <!-- Config -->
+    <div class="tab-content" id="tab-config">
+      <div class="page-header"><div class="page-title">Mi negocio</div><div class="page-sub">Información pública</div></div>
+      <div class="card card-pad">
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="cfg-nombre" /></div>
+          <div class="form-group"><label class="form-label">Categoría</label>
+            <select class="form-select" id="cfg-categoria">
+              <option>Peluquería</option><option>Nail Art</option><option>Nutrición</option><option>Masajes</option><option>Médico</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="cfg-tel" /></div>
+          <div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="cfg-dir" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="cfg-desc" placeholder="Describe tu negocio..."></textarea></div>
+        <button class="btn btn-primary" onclick="guardarConfig()">Guardar cambios</button>
+      </div>
+    </div>
+
+
+    <!-- Suscripción -->
+    <div class="tab-content" id="tab-suscripcion">
+      <div class="page-header"><div class="page-title">Mi plan</div><div class="page-sub">Gestiona tu suscripción mensual</div></div>
+      <div id="plan-info" class="card card-pad" style="margin-bottom:20px">
+        <div style="font-size:14px;color:var(--txt3)">Cargando estado del plan...</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card card-pad" style="border:2px solid var(--border)">
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:4px">Básico</div>
+          <div style="font-size:28px;font-weight:700;color:var(--brand-dark)">$4.990<span style="font-size:14px;font-weight:400;color:var(--txt3)">/mes</span></div>
+          <div style="font-size:13px;color:var(--txt3);margin:12px 0 16px">Hasta 50 turnos al mes</div>
+          <button class="btn btn-outline btn-full" onclick="suscribir('basico')">Suscribirse</button>
+        </div>
+        <div class="card card-pad" style="border:2px solid var(--brand)">
+          <div style="background:var(--brand);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:8px">Recomendado</div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:4px">Pro</div>
+          <div style="font-size:28px;font-weight:700;color:var(--brand-dark)">$9.990<span style="font-size:14px;font-weight:400;color:var(--txt3)">/mes</span></div>
+          <div style="font-size:13px;color:var(--txt3);margin:12px 0 16px">Turnos ilimitados + recordatorios email</div>
+          <button class="btn btn-primary btn-full" onclick="suscribir('pro')">Suscribirse</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+<script>
+auth.requireAuth();
+let todosLosTurnos = [];
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const pillMap = { pendiente:'badge-warn', confirmado:'badge-teal', cancelado:'badge-danger', completado:'badge-gray' };
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  initAdminTopbar();
+  const neg = auth.negocio();
+  if (neg) {
+    document.getElementById('sidebar-negocio-nombre').textContent = neg.nombre;
+    const cfg = document.getElementById('cfg-nombre');
+    if (cfg) cfg.value = neg.nombre;
+  }
+  const hoy = new Date();
+  document.getElementById('fecha-hoy').textContent = hoy.toLocaleDateString('es-CL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('filter-fecha').value = fechaUtil.hoy();
+
+  cargarDashboard();
+  cargarServicios();
+  cargarHorarios();
+  cargarConfig();
+});
+
+/* ── Tabs ── */
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const tabs = ['dashboard','turnos','servicios','horarios','config','suscripcion'];
+  const idx  = tabs.indexOf(name);
+  document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
+  if (name === 'turnos') cargarTurnos();
+}
+
+/* ── Dashboard ── */
+async function cargarDashboard() {
+  try {
+    const hoy   = fechaUtil.hoy();
+    const todos  = await api.getMisTurnos();
+    todosLosTurnos = todos;
+    const deHoy  = todos.filter(t => t.fecha?.split('T')[0] === hoy);
+    const pend   = todos.filter(t => t.estado === 'pendiente');
+    const canc   = todos.filter(t => t.estado === 'cancelado');
+    document.getElementById('stat-hoy').textContent  = deHoy.length;
+    document.getElementById('stat-sem').textContent  = todos.length;
+    document.getElementById('stat-pend').textContent = pend.length;
+    document.getElementById('stat-canc').textContent = canc.length;
+    document.getElementById('badge-pendientes').textContent = pend.length;
+    renderTurnosTabla('tbody-dashboard', deHoy, false);
+  } catch(e) {
+    document.getElementById('tbody-dashboard').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--txt3)">${e.message}</td></tr>`;
+  }
+}
+
+function filtrarDashboard(periodo, btn) {
+  document.querySelectorAll('#tab-dashboard .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const hoy  = fechaUtil.hoy();
+  const manana = new Date(); manana.setDate(manana.getDate()+1);
+  const mananaStr = manana.toISOString().split('T')[0];
+  const filtered = todosLosTurnos.filter(t => {
+    const f = t.fecha?.split('T')[0];
+    return periodo === 'hoy' ? f === hoy : f === mananaStr;
+  });
+  renderTurnosTabla('tbody-dashboard', filtered, false);
+}
+
+/* ── Turnos ── */
+async function cargarTurnos() {
+  const fecha  = document.getElementById('filter-fecha').value;
+  const estado = document.getElementById('filter-estado').value;
+  let query = '?';
+  if (fecha)  query += `fecha=${fecha}&`;
+  if (estado) query += `estado=${estado}`;
+  try {
+    const turnos = await api.getMisTurnos(query);
+    renderTurnosTabla('tbody-turnos', turnos, true);
+  } catch(e) {
+    document.getElementById('tbody-turnos').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--danger)">${e.message}</td></tr>`;
+  }
+}
+
+function renderTurnosTabla(tbodyId, turnos, showFecha) {
+  const tbody = document.getElementById(tbodyId);
+  if (!turnos.length) {
+    tbody.innerHTML = `<tr><td colspan="${showFecha?6:5}" style="text-align:center;padding:32px;color:var(--txt3)">Sin turnos para mostrar</td></tr>`;
+    return;
+  }
+  const avColors = ['#E6F1FB','#E1F5EE','#FBEAF0','#EAF3DE','#FAEEDA'];
+  const avTxt    = ['#185FA5','#0F6E56','#993556','#3B6D11','#854F0B'];
+  tbody.innerHTML = turnos.map((t, i) => {
+    const ci = i % 5;
+    const initials = (t.cliente_nombre||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const fecha = t.fecha ? t.fecha.split('T')[0] : '—';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div class="client-av" style="background:${avColors[ci]};color:${avTxt[ci]}">${initials}</div>
+        <div>
+          <div style="font-weight:500;font-size:14px">${t.cliente_nombre||'—'}</div>
+          <div style="font-size:12px;color:var(--txt3)">${t.cliente_email||''}</div>
+        </div>
+      </div></td>
+      <td>${t.servicio_nombre||'—'}</td>
+      ${showFecha ? `<td>${fechaUtil.formato(fecha)}</td>` : ''}
+      <td><strong>${t.hora?.slice(0,5)||'—'}</strong></td>
+      <td><span class="badge ${pillMap[t.estado]||'badge-gray'}">${t.estado||'—'}</span></td>
+      <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${t.estado==='pendiente' ? `<button class="act-btn act-confirm" onclick="cambiarEstado(${t.id},'confirmado')">Confirmar</button>` : ''}
+        ${t.estado!=='cancelado'&&t.estado!=='completado' ? `<button class="act-btn act-cancel" onclick="cambiarEstado(${t.id},'cancelado')">Cancelar</button>` : ''}
+        ${t.estado==='confirmado' ? `<button class="act-btn" style="border-color:var(--gray-200);color:var(--txt3)" onclick="cambiarEstado(${t.id},'completado')">Completar</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function cambiarEstado(id, estado) {
+  try {
+    await api.updateEstado(id, estado);
+    toast(`Estado actualizado: ${estado}`, 'success');
+    cargarDashboard();
+    if (document.getElementById('tab-turnos').classList.contains('active')) cargarTurnos();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+/* ── Servicios ── */
+async function cargarServicios() {
+  const el = document.getElementById('lista-servicios');
+  try {
+    const servicios = await api.getMisServicios();
+    if (!servicios.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">✂️</div><div class="empty-title">Sin servicios</div><p class="empty-sub">Agrega los servicios que ofreces</p></div>`;
+      return;
+    }
+    el.innerHTML = servicios.map(s => `
+      <div class="serv-row">
+        <div style="flex:1">
+          <div class="serv-name">${s.nombre}</div>
+          <div class="serv-meta">${s.duracion_min} min${s.precio ? ' · $'+Number(s.precio).toLocaleString('es-CL') : ''}</div>
+        </div>
+        <button class="act-btn act-cancel" onclick="eliminarServicio(${s.id})">Eliminar</button>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="card-pad" style="color:var(--danger)">${e.message}</div>`; }
+}
+
+function toggleFormServicio() {
+  const card = document.getElementById('form-servicio-card');
+  card.style.display = card.style.display === 'none' ? 'block' : 'none';
+}
+
+async function guardarServicio() {
+  const nombre = document.getElementById('serv-nombre').value.trim();
+  const dur    = parseInt(document.getElementById('serv-dur').value) || 30;
+  const precio = parseFloat(document.getElementById('serv-precio').value) || null;
+  if (!nombre) { toast('Nombre requerido', 'error'); return; }
+  try {
+    await api.crearServicio({ nombre, duracion_min: dur, precio });
+    toast('Servicio guardado ✓', 'success');
+    toggleFormServicio();
+    cargarServicios();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function eliminarServicio(id) {
+  if (!confirm('¿Eliminar este servicio?')) return;
+  try { await api.deleteServicio(id); toast('Servicio eliminado', 'success'); cargarServicios(); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+/* ── Horarios ── */
+let horariosData = [];
+
+async function cargarHorarios() {
+  const el = document.getElementById('horarios-lista');
+  try {
+    const horarios = await api.getMisHorarios();
+    horariosData = DIAS.map((dia, i) => {
+      const h = horarios.find(x => x.dia_semana === i+1);
+      return { dia_semana: i+1, hora_inicio: h?.hora_inicio?.slice(0,5) || '09:00', hora_fin: h?.hora_fin?.slice(0,5) || '19:00', activo: h?.activo ?? (i < 6) };
+    });
+    renderHorarios();
+  } catch(e) {
+    // Si falla (negocio nuevo sin horarios) igual mostramos el formulario
+    horariosData = DIAS.map((_, i) => ({ dia_semana: i+1, hora_inicio: '09:00', hora_fin: '19:00', activo: i < 6 }));
+    renderHorarios();
+  }
+}
+
+function renderHorarios() {
+  document.getElementById('horarios-lista').innerHTML = horariosData.map((h, i) => `
+    <div class="horario-row">
+      <div class="horario-day">${DIAS[i]}</div>
+      <label class="toggle-wrap">
+        <input type="checkbox" ${h.activo ? 'checked' : ''} onchange="horariosData[${i}].activo=this.checked;renderHorarioRow(${i})">
+        <span class="toggle-slider"></span>
+      </label>
+      <div class="time-inputs" id="ti-${i}" style="${!h.activo ? 'opacity:.35;pointer-events:none' : ''}">
+        <input type="time" value="${h.hora_inicio}" onchange="horariosData[${i}].hora_inicio=this.value">
+        <span>a</span>
+        <input type="time" value="${h.hora_fin}" onchange="horariosData[${i}].hora_fin=this.value">
+      </div>
+    </div>`).join('');
+}
+
+function renderHorarioRow(i) {
+  const ti = document.getElementById('ti-'+i);
+  if (ti) ti.style.cssText = horariosData[i].activo ? '' : 'opacity:.35;pointer-events:none';
+}
+
+async function guardarHorarios() {
+  try { await api.saveHorarios(horariosData); toast('Horarios guardados ✓', 'success'); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+/* ── Config ── */
+async function cargarConfig() {
+  const neg = auth.negocio();
+  if (!neg) return;
+  try {
+    const data = await api.getNegocio(neg.id);
+    if (data.nombre)    document.getElementById('cfg-nombre').value = data.nombre;
+    if (data.categoria) document.getElementById('cfg-categoria').value = data.categoria;
+    if (data.telefono)  document.getElementById('cfg-tel').value = data.telefono;
+    if (data.direccion) document.getElementById('cfg-dir').value = data.direccion;
+    if (data.descripcion) document.getElementById('cfg-desc').value = data.descripcion;
+  } catch(e) { /* silencioso */ }
+}
+
+async function guardarConfig() {
+  const data = {
+    nombre:      document.getElementById('cfg-nombre').value.trim(),
+    categoria:   document.getElementById('cfg-categoria').value,
+    telefono:    document.getElementById('cfg-tel').value.trim(),
+    direccion:   document.getElementById('cfg-dir').value.trim(),
+    descripcion: document.getElementById('cfg-desc').value.trim(),
+  };
+  try { await api.updatePerfil(data); toast('Datos guardados ✓', 'success'); }
+  catch(e) { toast(e.message, 'error'); }
+}
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
+/* ── Suscripción ── */
+async function cargarPlanInfo() {
+  const el = document.getElementById('plan-info');
+  if (!el) return;
+  try {
+    const data = await api.get('/pagos/estado');
+    const color = data.vigente ? 'var(--accent)' : 'var(--danger)';
+    const estado = data.vigente ? `Activo — vence en ${data.diasRestantes} días` : 'Vencido — renueva para recibir reservas';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:600">Plan ${data.plan === 'pro' ? 'Pro' : 'Básico'}</div>
+          <div style="font-size:13px;color:${color};margin-top:4px">${estado}</div>
+          ${data.vence ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px">Vence el ${fechaUtil.formato(data.vence)}</div>` : ''}
+        </div>
+        <span style="font-size:24px">${data.vigente ? '✅' : '⚠️'}</span>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--txt3)">Sin plan activo — elige un plan abajo para comenzar</div>';
+  }
+}
+
+async function suscribir(plan) {
+  try {
+    const data = await api.post('/pagos/suscribir', { plan });
+    const url = window.location.hostname === 'localhost' ? data.sandbox_init : data.init_point;
+    window.open(url, '_blank');
+    toast('Redirigiendo a Mercado Pago...', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// Verificar si llegó de un pago
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('pago') === 'ok') {
+  toast('¡Pago confirmado! Tu plan está activo 🎉', 'success');
+  setTimeout(cargarPlanInfo, 2000);
+} else if (urlParams.get('pago') === 'error') {
+  toast('El pago no fue procesado. Intenta nuevamente.', 'error');
+}
+
+cargarPlanInfo();
+</script>
+</body>
+</html>

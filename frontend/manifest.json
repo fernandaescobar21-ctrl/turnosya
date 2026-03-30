@@ -1,0 +1,13 @@
+{
+  "name": "TurnosYa",
+  "short_name": "TurnosYa",
+  "description": "Reserva turnos en segundos, sin llamadas",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0C447C",
+  "theme_color": "#0C447C",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "img/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

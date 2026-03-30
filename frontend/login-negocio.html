@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0C447C">
+  <title>TurnosYa — Ingreso Negocio</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:var(--bg); }
+    .auth-card { width:100%; max-width:420px; }
+    .auth-logo { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--brand-dark); text-align:center; margin-bottom:8px; }
+    .auth-logo span { color:var(--accent); }
+    .auth-sub { text-align:center; color:var(--txt3); font-size:14px; margin-bottom:32px; }
+    .auth-tabs { display:flex; background:var(--gray-50); border-radius:var(--radius-sm); padding:4px; margin-bottom:24px; }
+    .auth-tab { flex:1; padding:9px; border-radius:6px; border:none; background:none; font-size:14px; font-weight:500; color:var(--txt3); transition:all .2s; cursor:pointer; }
+    .auth-tab.active { background:var(--surface); color:var(--brand-dark); box-shadow:var(--shadow-sm); }
+    .auth-form { display:none; }
+    .auth-form.active { display:block; }
+    .auth-divider { text-align:center; color:var(--txt3); font-size:13px; margin:20px 0; position:relative; }
+    .auth-divider::before, .auth-divider::after { content:''; position:absolute; top:50%; width:40%; height:1px; background:var(--border); }
+    .auth-divider::before { left:0; }
+    .auth-divider::after  { right:0; }
+    .back-link { display:block; text-align:center; color:var(--txt3); font-size:13px; margin-top:20px; }
+    .back-link:hover { color:var(--brand); }
+  </style>
+</head>
+<body>
+<div class="auth-card card card-pad fade-up">
+  <div class="auth-logo">Turn<span>os</span>Ya</div>
+  <div class="auth-sub">Panel para negocios</div>
+
+  <div class="auth-tabs">
+    <button class="auth-tab active" onclick="switchTab('login')">Ingresar</button>
+    <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
+  </div>
+
+  <!-- Login -->
+  <div class="auth-form active" id="form-login">
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="login-email" type="email" placeholder="negocio@email.cl" autocomplete="email"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input class="form-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-login">Ingresar al panel</button>
+    <div class="auth-divider">o</div>
+    <p style="text-align:center;font-size:13px;color:var(--txt3)">¿No tienes cuenta? Usa la pestaña <strong>Registrarse</strong></p>
+  </div>
+
+  <!-- Registro -->
+  <div class="auth-form" id="form-register">
+    <div class="form-group">
+      <label class="form-label">Nombre del negocio</label>
+      <input class="form-input" id="reg-nombre" placeholder="Studio Valentina" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-select" id="reg-categoria">
+        <option value="">Selecciona...</option>
+        <option>Peluquería</option>
+        <option>Nail Art</option>
+        <option>Nutrición</option>
+        <option>Masajes</option>
+        <option>Médico</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="reg-email" type="email" placeholder="negocio@email.cl" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input class="form-input" id="reg-pass" type="password" placeholder="Mínimo 8 caracteres" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Teléfono</label>
+      <input class="form-input" id="reg-tel" type="tel" placeholder="+56 9..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dirección / Ciudad</label>
+      <input class="form-input" id="reg-dir" placeholder="Concepción, Biobío" />
+    </div>
+    <button class="btn btn-accent btn-full" id="btn-register">Crear mi cuenta gratis</button>
+  </div>
+
+  <a class="back-link" href="index.html">← Volver a la app</a>
+</div>
+
+<script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+<script>
+if (auth.estaLogueado()) window.location.href = 'admin.html';
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('form-login').classList.toggle('active', tab==='login');
+  document.getElementById('form-register').classList.toggle('active', tab==='register');
+}
+
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { toast('Completa todos los campos', 'error'); return; }
+  const btn = document.getElementById('btn-login');
+  setLoading(btn, true);
+  try {
+    const { token, negocio } = await api.login(email, pass);
+    auth.guardar(token, negocio);
+    window.location.href = 'admin.html';
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally { setLoading(btn, false); }
+});
+
+document.getElementById('btn-register').addEventListener('click', async () => {
+  const data = {
+    nombre:    document.getElementById('reg-nombre').value.trim(),
+    categoria: document.getElementById('reg-categoria').value,
+    email:     document.getElementById('reg-email').value.trim(),
+    password:  document.getElementById('reg-pass').value,
+    telefono:  document.getElementById('reg-tel').value.trim(),
+    direccion: document.getElementById('reg-dir').value.trim(),
+  };
+  if (!data.nombre || !data.email || !data.password || !data.categoria) {
+    toast('Completa los campos obligatorios', 'error'); return;
+  }
+  if (data.password.length < 8) { toast('La contraseña debe tener al menos 8 caracteres', 'error'); return; }
+  const btn = document.getElementById('btn-register');
+  setLoading(btn, true);
+  try {
+    const { token } = await api.register(data);
+    auth.guardar(token, { nombre: data.nombre, categoria: data.categoria });
+    toast('¡Cuenta creada! Bienvenida 🎉', 'success');
+    setTimeout(() => window.location.href = 'admin.html', 1200);
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally { setLoading(btn, false); }
+});
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}</script>
+</body>
+</html>
