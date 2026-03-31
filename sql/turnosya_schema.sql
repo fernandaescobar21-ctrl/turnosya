@@ -9,7 +9,7 @@ USE turnosya;
 -- ------------------------------------------------------------
 -- 1. NEGOCIOS
 -- ------------------------------------------------------------
-CREATE TABLE negocios (
+CREATE TABLE negocios(
   id          INT AUTO_INCREMENT PRIMARY KEY,
   nombre      VARCHAR(100) NOT NULL,
   categoria   VARCHAR(50)  NOT NULL,
@@ -128,8 +128,8 @@ VALUES (1, 1, 2, CURDATE() + INTERVAL 1 DAY, '10:00', 'pendiente');
 --  Migración: agregar control de plan
 -- ============================================================
 ALTER TABLE negocios
-  ADD COLUMN IF NOT EXISTS plan_vence DATE NULL,
-  ADD COLUMN IF NOT EXISTS periodo_gracia_dias INT NOT NULL DEFAULT 30;
+  ADD COLUMN plan_vence DATE NULL,
+  ADD COLUMN periodo_gracia_dias INT NOT NULL DEFAULT 30;
 
 -- Los negocios nuevos tienen 30 días gratis automáticamente
 -- El campo plan_vence NULL = en período de gracia
